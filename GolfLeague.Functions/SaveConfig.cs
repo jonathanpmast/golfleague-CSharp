@@ -8,22 +8,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using GolfLeague.Core;
-using System.Collections.Generic;
-
 namespace GolfLeague.Functions
 {
-    public static class GetScores
+    public static class SaveConfig
     {
-        [FunctionName("GetScores")]
+        [FunctionName("SaveConfig")]
         public static IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "{league}/scores/{roundYear:int?}/{roundNumber:int?}")] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{league}/config")] HttpRequest req,
             [CosmosDB(
                 databaseName:"golfleague",
-                collectionName:"golfleague-scores",
+                collectionName:"golfleague-config",
                 ConnectionStringSetting = "CosmosDbConnectionString",
-                PartitionKey = "{league}",
-                SqlQuery = "SELECT * from c WHERE ((IS_NULL({roundYear})) OR (c.roundYear={roundYear})) AND ((IS_NULL({roundNumber})) OR (c.roundNumber = {roundNumber})) ORDER BY c.roundPlayedDate DESC"
-                )] out GolfLeagueScoresItem scoreItem,
+                CreateIfNotExists = false
+            )] out GolfLeagueConfig outputDocument,
             ILogger log)
         {
             string requestBody = String.Empty;
@@ -31,7 +28,7 @@ namespace GolfLeague.Functions
             {
                 requestBody = streamReader.ReadToEnd();
             }
-            scoreItem = JsonConvert.DeserializeObject<GolfLeagueScoresItem>(requestBody);
+            outputDocument = JsonConvert.DeserializeObject<GolfLeagueConfig>(requestBody);
             return new OkResult();
         }
     }
