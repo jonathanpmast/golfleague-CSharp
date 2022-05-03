@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using GolfLeague.Core;
+using Azure.Storage.Queues.Models;
+using GolfLeague.Core.QueueMessages;
 
 namespace GolfLeague.Functions
 {
@@ -23,7 +25,7 @@ namespace GolfLeague.Functions
                 ConnectionStringSetting = "CosmosDbConnectionString",
                 CreateIfNotExists = false
             )] out GolfLeagueScoresItem outputDocument,
-            [Queue("%ScorePostedQueueName%")] out dynamic queueMessage,
+            [Queue("%ScorePostedQueueName%", Connection = "GolfLeagueStoreAccountConnectionString")] out ScorePostedQueueMessage queueMessage,
             ILogger log)
         {
             string requestBody = String.Empty;
@@ -38,11 +40,11 @@ namespace GolfLeague.Functions
             leagueScoreItem.CreateDate = DateTime.Now.ToFileTimeUtc();
             leagueScoreItem.LeagueName = league;
             outputDocument = leagueScoreItem;
-            queueMessage = new
+            queueMessage = new ScorePostedQueueMessage()
             {
-                leagueName = league,
-                roundYear = leagueScoreItem.RoundYear,
-                roundId = leagueScoreItem.RoundId
+                LeagueName = league,
+                RoundYear = leagueScoreItem.RoundYear,
+                RoundId = leagueScoreItem.RoundId
             };
             return new OkResult();
         }
